@@ -24,9 +24,12 @@ const float GRAVITY = 0.3f;
 const float JUMP_SPEED = -5.0f;  // (set velocity of bird in the Y direction upon jump)
 const float TUBE_SPEED = 3.0f;
 
-// TODO: (Q1)
+// TODO: (Q1)../extern/sfml-3.1.0-linux-x86_64-ubuntu20.04/include/
 //  Initial Bird Attributes
 //  Initialize the global (constant) variables for it here (radius, position, color)
+const float BIRD_RADIUS = 15.0f;
+const sf::Vector2<float> BIRD_POSITION = {100.0f, 400.0f};
+const sf::Color BIRD_COLOR = sf::Color::Yellow;
 
 // ResourceManager just owns all the resources/assets you'd want in your game.
 // In an engine, you'd probably want to make this more flexible than what we have here
@@ -74,13 +77,16 @@ struct BirdState {
         //    appropriate size, color, and initial position.
         //  Note: consider using member initializer list to set the radius via ctor call.
         // ====== ====== ======
+        birdShape.setPosition(BIRD_POSITION);
+        birdShape.setRadius(BIRD_RADIUS);
+        birdShape.setFillColor(BIRD_COLOR);
     }
-
     // ====== ====== ======
     // TODO: (Q1)
     //  - add a field for the bird's shape.
     // ====== ====== ======
     float velocityY;
+    sf::CircleShape birdShape;
 };
 
 struct GameState {
@@ -121,6 +127,7 @@ private:
         //    Should be equivalent to: bird.positionY += bird.velocityY;
         //  - Note: bird's x-coordinate will alway be exactly 100.f
         // ====== ====== ======
+        bird.birdShape.setPosition(bird.birdShape.getPosition() + sf::Vector2f{0.0f, bird.velocityY});
 
         // ====== ====== ======
         // TODO: (Q3)
@@ -128,6 +135,12 @@ private:
         //    (i.e., if it's no longer visible). If not, game should reset by clearing
         //    the tubes and restarting the game (setting the bird back to original initial position)
         // ====== ====== ======
+        if (bird.birdShape.getPosition().y > 800 || bird.birdShape.getPosition().y < 0){
+            //reset tubes
+            resetTubes();
+            //reset bird
+            bird.birdShape.setPosition(BIRD_POSITION);
+        }
     }
 
     void updateTubes() {
@@ -158,12 +171,19 @@ private:
         //  implicitly converted to a boolean value) depending on whether a rectangle intersects
         //  with another
         // ====== ====== ======
-
+        sf::FloatRect birdBox = bird.birdShape.getGlobalBounds();
+        sf::FloatRect topTubeBox = tubes[0].topTube.getGlobalBounds();
+        sf::FloatRect bottomTubeBox = tubes[1].bottomTube.getGlobalBounds();
+        
         // ====== ====== ======
         // TODO: (Q4)
         //  If bird hits tube, game should reset by resetting the tubes and resetting the bird
         //  to its initial state (i.e., restarting the game)
         // ====== ====== ======
+        if (birdBox.findIntersection(topTubeBox) || birdBox.findIntersection(bottomTubeBox)){
+            resetTubes();
+            bird.birdShape.setPosition(BIRD_POSITION);
+        }
     }
 
 public:
@@ -177,6 +197,7 @@ public:
 
 void handleInput(sf::Window& window, GameState& gameState, const ResourceManager& resources,
                  bool& shouldQuit) {
+    window.setKeyRepeatEnabled(false);
     while (const std::optional<sf::Event> event = window.pollEvent()) {
         if (event->is<sf::Event::Closed>()) {
             window.close();
@@ -187,6 +208,11 @@ void handleInput(sf::Window& window, GameState& gameState, const ResourceManager
         // TODO: (Q2)
         //  implement jump logic (the key press should be space) and play jump sound fx
         // ====== ====== ======
+        if (const auto *keyPressed = event->getIf<sf::Event::KeyPressed>()){
+            if (keyPressed->scancode == sf::Keyboard::Scan::Space){
+                gameState.bird.velocityY = JUMP_SPEED;
+            }
+        }
     }
 }
 
@@ -201,6 +227,7 @@ void render(sf::RenderWindow& window, const GameState& gameState) {
     // ====== ====== ======
     // TODO: (Q1) Draw bird
     // ====== ====== ======
+    window.draw(gameState.bird.birdShape);
     window.display();
 }
 
