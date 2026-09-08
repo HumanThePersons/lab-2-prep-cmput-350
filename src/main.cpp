@@ -173,7 +173,7 @@ private:
         // ====== ====== ======
         sf::FloatRect birdBox = bird.birdShape.getGlobalBounds();
         sf::FloatRect topTubeBox = tubes[0].topTube.getGlobalBounds();
-        sf::FloatRect bottomTubeBox = tubes[1].bottomTube.getGlobalBounds();
+        sf::FloatRect bottomTubeBox = tubes[0].bottomTube.getGlobalBounds();
         
         // ====== ====== ======
         // TODO: (Q4)
@@ -211,6 +211,10 @@ void handleInput(sf::Window& window, GameState& gameState, const ResourceManager
         if (const auto *keyPressed = event->getIf<sf::Event::KeyPressed>()){
             if (keyPressed->scancode == sf::Keyboard::Scan::Space){
                 gameState.bird.velocityY = JUMP_SPEED;
+                // Checks that the sound exists to prevent segmentation fault
+                if (resources.jumpSound){
+                    resources.jumpSound->play();
+                }
             }
         }
     }
@@ -259,6 +263,16 @@ int main() {
         //            std::cout << "value is " << *intPtr << '\n';
         //            std::cout << "raw address is " << intPtr.get() << '\n';
         // ====== ====== ======
+
+        resources.jumpSoundBuffer = std::make_unique<sf::SoundBuffer>();
+        if (!resources.jumpSoundBuffer->loadFromFile("assets/jump.wav")) { 
+            std::cerr << "Warning: Could not load jump.wav\n";
+        }
+        else {
+            resources.jumpSound = std::make_unique<sf::Sound>(*resources.jumpSoundBuffer); 
+            //std::unique_ptr<sf::Sound> initJumpSound(new sf::Sound(*resources.jumpSoundBuffer));
+            //resources.jumpSound.reset(initJumpSound.release());
+        }
 
         bool shouldQuit = false;
         // Main game loop
